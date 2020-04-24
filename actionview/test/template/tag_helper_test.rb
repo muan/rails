@@ -59,6 +59,23 @@ class TagHelperTest < ActionView::TestCase
     assert_equal "<p />", tag("p", ignored: nil)
   end
 
+  def test_tag_options
+    options = {
+      data: { user_id: 1 },
+      included: "value",
+      disabled: true
+    }
+    assert_equal " data-user-id=\"1\" included=\"value\" disabled=\"disabled\"", tag_options(options)
+  end
+
+  def test_tag_options_escaping
+    options = {
+      alt: "1 < 2"
+    }
+    assert_equal " alt=\"1 &lt; 2\"", tag_options(options, true)
+    assert_equal " alt=\"1 < 2\"", tag_options(options, false)
+  end
+
   def test_tag_builder_options_rejects_nil_option
     assert_equal "<p></p>", tag.p(ignored: nil)
   end
