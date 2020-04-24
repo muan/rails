@@ -76,6 +76,33 @@ class TagHelperTest < ActionView::TestCase
     assert_equal " alt=\"1 < 2\"", tag_options(options, false)
   end
 
+  def test_conditional_tag_options
+    options = {
+      {
+        included: "value",
+        included2: "value"
+      } => true,
+      {
+        excluded1: "value",
+        excluded2: "value"
+      } => false,
+      {excluded: "value"} => false
+    }
+    assert_equal " included=\"value\" included2=\"value\"", tag_options(options)
+  end
+
+  def test_conditional_tag_options_with_class_names
+    options = {
+      class: {
+        "included": true,
+        "excluded": false
+      },
+      {included: "value"} => true,
+      {excluded: "value"} => false
+    }
+    assert_equal " class=\"included\" included=\"value\"", tag_options(options)
+  end
+
   def test_tag_builder_options_rejects_nil_option
     assert_equal "<p></p>", tag.p(ignored: nil)
   end

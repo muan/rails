@@ -302,10 +302,24 @@ module ActionView
       #    # => " class=\"button\" disabled=\"disabled\""
       #   tag_options(data: {user_id: "1"})
       #    # => " data-user-id=\"1\""
+      #   tag_options(class: {"selected": true}, {checked: true}: true)
+      #    # => " class=\"selected\" checked=\"checked\""
+      #   tag_options({list: "datalist-id", class: "has-datalist"}: true)
+      #    # => " list=\"datalist-id\" class=\"has-datalist\""
       def tag_options(options, escape = true)
         return if options.blank?
         output = +""
         sep    = " "
+
+        options = options.inject({}) do |memo, (key, value)|
+          if key.is_a?(Hash)
+            memo.merge!(key) if value
+          else
+            memo[key] = value
+          end
+          memo
+        end
+
         options.each_pair do |key, value|
           type = TAG_TYPES[key]
           if type == :prefix && value.is_a?(Hash)
