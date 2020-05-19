@@ -50,16 +50,17 @@ module ActionView
         def tag_string(name, content = nil, escape_attributes: true, **options, &block)
           content = @view_context.capture(self, &block) if block_given?
           if VOID_ELEMENTS.include?(name) && content.nil?
-            "<#{name.to_s.dasherize}#{@view_context.tag_options(options, escape_attributes)}>".html_safe
+            tag_attributes = @view_context.tag_attributes(options, escape_attributes)
+            "<#{name.to_s.dasherize}#{tag_attributes ? " #{tag_attributes}" : nil}>".html_safe
           else
             content_tag_string(name.to_s.dasherize, content || "", options, escape_attributes)
           end
         end
 
         def content_tag_string(name, content, options, escape = true)
-          tag_options = @view_context.tag_options(options, escape) if options
+          tag_attributes = @view_context.tag_attributes(options, escape) if options
           content     = ERB::Util.unwrapped_html_escape(content) if escape
-          "<#{name}#{tag_options}>#{PRE_CONTENT_STRINGS[name]}#{content}</#{name}>".html_safe
+          "<#{name}#{tag_attributes ? " #{tag_attributes}" : nil}>#{PRE_CONTENT_STRINGS[name]}#{content}</#{name}>".html_safe
         end
 
         private
@@ -200,7 +201,8 @@ module ActionView
         if name.nil?
           tag_builder
         else
-          "<#{name}#{tag_options(options, escape) if options}#{open ? ">" : " />"}".html_safe
+          attributes = tag_attributes(options, escape) if options
+          "<#{name}#{attributes ? " #{attributes}" : nil}#{open ? ">" : " />"}".html_safe
         end
       end
 
@@ -290,42 +292,39 @@ module ActionView
       # The generated attributes are escaped by default. This can be disabled using
       # +escape+.
       #
-      #   tag_options(src: 'open & shut.png')
-      #   # => " src=\"open &amp; shut.png\""
+      #   tag_attributes(src: 'open & shut.png')
+      #   # => "src=\"open &amp; shut.png\""
       #
-      #   tag_options(src: 'open & shut.png', true)
-      #   # => " src=\"open & shut.png\""
+      #   tag_attributes(src: 'open & shut.png', true)
+      #   # => "src=\"open & shut.png\""
       #
       # ==== Examples
       #
-      #   tag_options(class: "button", disabled: true)
-      #    # => " class=\"button\" disabled=\"disabled\""
+      #   tag_attributes(class: "button", disabled: true)
+      #    # => "class=\"button\" disabled=\"disabled\""
       #
-      #   tag_options(data: {user_id: "1"})
-      #    # => " data-user-id=\"1\""
-      def tag_options(options, escape = true)
+      #   tag_attributes(data: {user_id: "1"})
+      #    # => "data-user-id=\"1\""
+      def tag_attributes(options, escape = true)
         return if options.blank?
-        output = +""
+        output = []
         sep    = " "
         options.each_pair do |key, value|
           type = TAG_TYPES[key]
           if type == :prefix && value.is_a?(Hash)
             value.each_pair do |k, v|
               next if v.nil?
-              output << sep
               output << prefix_tag_option(key, k, v, escape)
             end
           elsif type == :boolean
             if value
-              output << sep
               output << boolean_tag_option(key)
             end
           elsif !value.nil?
-            output << sep
             output << tag_option(key, value, escape)
           end
         end
-        output unless output.empty?
+        output.join(sep) unless output.empty?
       end
 
       private
