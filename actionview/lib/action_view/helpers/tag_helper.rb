@@ -50,20 +50,25 @@ module ActionView
         def tag_string(name, content = nil, escape_attributes: true, **options, &block)
           content = @view_context.capture(self, &block) if block_given?
           if VOID_ELEMENTS.include?(name) && content.nil?
-            tag_attributes = @view_context.tag_attributes(options, escape_attributes)
-            "<#{name.to_s.dasherize}#{tag_attributes ? " #{tag_attributes}" : nil}>".html_safe
+            tag_attributes = tag_attribues_with_leading_space(options, escape_attributes)
+            "<#{name.to_s.dasherize}#{tag_attributes}>".html_safe
           else
             content_tag_string(name.to_s.dasherize, content || "", options, escape_attributes)
           end
         end
 
         def content_tag_string(name, content, options, escape = true)
-          tag_attributes = @view_context.tag_attributes(options, escape) if options
+          tag_attributes = tag_attribues_with_leading_space(options, escape) if options
           content     = ERB::Util.unwrapped_html_escape(content) if escape
-          "<#{name}#{tag_attributes ? " #{tag_attributes}" : nil}>#{PRE_CONTENT_STRINGS[name]}#{content}</#{name}>".html_safe
+          "<#{name}#{tag_attributes}>#{PRE_CONTENT_STRINGS[name]}#{content}</#{name}>".html_safe
         end
 
         private
+          def tag_attribues_with_leading_space options, escape
+            attributes = @view_context.tag_attributes(options, escape)
+            attributes ? " #{attributes}" : nil
+          end
+
           def respond_to_missing?(*args)
             true
           end
